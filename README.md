@@ -5,7 +5,7 @@ Candidate : Fatma Bouzid
 ## Plan
 - [x] Étape 0 : mise en place
 - [x] Étape 1 : Déployer une application Node.js simple
-- [ ] Étape 2 : Empaqueter l'app en chart Helm
+- [x] Étape 2 : Empaqueter l'app en chart Helm
 - [ ] Étape 3 : Premier déploiement GitOps avec ArgoCD
 - [ ] Étape 4 : Monitoring et alerting
 - [ ] Étape 5 (bonus) : Conception d'un script assisté par IA
@@ -41,3 +41,27 @@ J'ai ensuite testé l'accès à l'application depuis le cluster avec une requêt
 J'ai mieux compris le fonctionnement d'un Deployment Kubernetes avec plusieurs replicas, ainsi que le rôle d'un Service pour permettre l'accès aux pods.
 
 J'ai également appris à vérifier l'état des pods, les endpoints d'un Service et à tester la communication entre les ressources du cluster.
+
+## Étape 2 : Empaqueter l'application avec Helm
+
+J'ai transformé les manifests Kubernetes de l'étape 1 en un chart Helm simple.
+
+Le chart contient :
+- `Chart.yaml`
+- `values.yaml`
+- `templates/deployment.yaml`
+- `templates/service.yaml`
+
+Dans `values.yaml`, j'ai rendu configurables :
+- le nombre de réplicas
+- le tag de l'image Docker
+
+Avant l'installation du chart, j'ai supprimé les anciennes ressources Kubernetes créées directement avec `kubectl` à l'étape 1, afin de laisser Helm créer et gérer ses propres ressources.
+
+J'ai vérifié le chart avec `helm lint`, puis je l'ai installé avec `helm install` avec 3 réplicas.
+
+Ensuite, j'ai modifié `replicaCount` de 3 à 2 dans `values.yaml` et utilisé `helm upgrade`. Le Deployment est bien passé à 2 pods en fonctionnement.
+
+### Ce que j'ai appris
+
+Helm permet de regrouper les manifests Kubernetes dans un chart et de rendre certaines valeurs configurables avec `values.yaml`. Cela évite de modifier directement les fichiers YAML à chaque changement. Par exemple, je peux changer le nombre de réplicas ou le tag de l'image puis utiliser `helm upgrade` pour appliquer la modification.

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: geoptis
+description: Helm chart for Geoptis Node.js application
+type: application
+version: 0.1.0
+appVersion: "1.0"
