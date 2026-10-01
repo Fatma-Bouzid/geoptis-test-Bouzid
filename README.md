@@ -6,7 +6,7 @@ Candidate : Fatma Bouzid
 - [x] Étape 0 : mise en place
 - [x] Étape 1 : Déployer une application Node.js simple
 - [x] Étape 2 : Empaqueter l'app en chart Helm
-- [ ] Étape 3 : Premier déploiement GitOps avec ArgoCD
+- [x] Étape 3 : Premier déploiement GitOps avec ArgoCD
 - [ ] Étape 4 : Monitoring et alerting
 - [ ] Étape 5 (bonus) : Conception d'un script assisté par IA
 
@@ -31,6 +31,8 @@ J'ai créé une image Docker à partir d'un `Dockerfile`, puis je l'ai chargée 
 Côté Kubernetes, j'ai créé un `Deployment` avec 3 replicas ainsi qu'un `Service` de type `ClusterIP`.
 
 Les 3 pods sont bien en état `Running` et le Service possède bien les 3 endpoints.
+
+![Pods](images/pods.png)
 
 J'ai ensuite testé l'accès à l'application depuis le cluster avec une requête HTTP et obtenu :
 
@@ -62,6 +64,45 @@ J'ai vérifié le chart avec `helm lint`, puis je l'ai installé avec `helm inst
 
 Ensuite, j'ai modifié `replicaCount` de 3 à 2 dans `values.yaml` et utilisé `helm upgrade`. Le Deployment est bien passé à 2 pods en fonctionnement.
 
+![Pods](images/upgrade.png)
+
+
 ### Ce que j'ai appris
 
 Helm permet de regrouper les manifests Kubernetes dans un chart et de rendre certaines valeurs configurables avec `values.yaml`. Cela évite de modifier directement les fichiers YAML à chaque changement. Par exemple, je peux changer le nombre de réplicas ou le tag de l'image puis utiliser `helm upgrade` pour appliquer la modification.
+
+## Étape 3 : Premier déploiement GitOps avec ArgoCD
+
+Cette étape était nouvelle pour moi. J'ai suivi le guide officiel d'ArgoCD.
+
+### Installation
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+Juste après, plusieurs pods étaient en `CreateContainerConfigError`. Avec `kubectl describe pod`, j'ai vu `secret "argocd-redis" not found` : le secret n'était simplement pas encore créé. Après quelques minutes, tous les pods étaient en `Running`.
+
+### L'Application ArgoCD
+
+J'ai écrit `argocd/application.yaml`. Elle pointe vers mon dépôt, sur le dossier `geoptis` (le chart de l'étape 2), avec la synchronisation automatique :
+- `prune: true` supprime du cluster ce qui n'est plus dans Git
+- `selfHeal: true` remet le cluster dans l'état de Git si quelqu'un le modifie à la main
+
+Après `kubectl apply -f argocd/application.yaml`, l'application est passée à `Synced` et `Healthy`.
+
+### La boucle GitOps
+
+J'ai passé `replicaCount` de 2 à 4 dans `geoptis/values.yaml`, puis `git commit` et `git push`. Je n'ai ensuite lancé ni `kubectl apply` ni `helm upgrade` : ArgoCD a détecté le changement dans Git et a automatiquement synchronisé l’application. Le Deployment est ensuite passé à 4/4.
+
+![Synchronisation ArgoCD](images/argocd-sync.png)
+
+### Ce que GitOps change pour moi
+
+Pendant mes stages, j'ai surtout travaillé avec Docker et Docker Compose pour déployer des applications et des outils de monitoring. Quand je voulais changer quelque chose, je modifiais la configuration et je relançais moi-même les conteneurs (`docker compose up -d`). Avec GitOps, je ne touche plus à l'infrastructure : je modifie Git et ArgoCD s'occupe du reste.
+
+Pour une équipe, c'est intéressant parce que :
+- tout changement passe par Git, donc on sait qui a changé quoi et quand
+- un retour en arrière, c'est un simple `git revert`
+- si quelqu'un modifie le cluster à la main, `selfHeal` le remet dans l'état voulu

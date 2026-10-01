@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+    name: geoptis
+    namespace: argocd
+spec:
+    project: default
+    source:
+        repoURL: 'https://github.com/Fatma-Bouzid/geoptis-test-Bouzid.git'
+        targetRevision: main
+        path: geoptis
+        helm:
+            valueFiles:
+                - values.yaml
+    destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: default
+    syncPolicy:
+        automated:
+            prune: true
+            selfHeal: true
