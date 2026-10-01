@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoptis-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: geoptis-app
+  template:
+    metadata:
+      labels:
+        app: geoptis-app
+    spec:
+      containers:
+        - name: geoptis-app
+          image: geoptis-node:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
