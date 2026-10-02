@@ -115,6 +115,8 @@ J'ai installé `kube-prometheus-stack` avec Helm dans un namespace `monitoring`.
 
 J'ai écrit une règle d'alerte (`monitoring/geoptis-alert.yaml`) qui se déclenche quand un pod `geoptis-app-*` redémarre plus de 2 fois en 5 minutes. Elle porte le label `release: monitoring`, sans lequel Prometheus ne la charge pas.
 
+![metriques](images/metriques-geoptis-app.png)
+
 Pour la déclencher, j'ai d'abord essayé de tuer le process de mon application avec `kill 1`, sans effet : dans un conteneur, ce process est le PID 1 et le noyau ignore les signaux qu'on lui envoie depuis l'intérieur. J'ai donc créé un pod de test qui plante en boucle, avec un nom qui correspond à ma règle. Il est passé en `CrashLoopBackOff` et l'alerte est passée à `Firing`. Mon application n'a pas été touchée.
 
 ![Alerte en firing](images/alerte-firing.png)
