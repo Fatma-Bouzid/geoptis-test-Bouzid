@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: geoptis-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: geoptis.rules
+      rules:
+        - alert: GeoptisPodRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="default", pod=~"geoptis-app-.*"}[5m]) > 2
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Geoptis pod has restarted multiple times"
+            description: "The Geoptis pod has restarted more than 2 times in the last 5 minutes."

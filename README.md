@@ -7,7 +7,7 @@ Candidate : Fatma Bouzid
 - [x] Étape 1 : Déployer une application Node.js simple
 - [x] Étape 2 : Empaqueter l'app en chart Helm
 - [x] Étape 3 : Premier déploiement GitOps avec ArgoCD
-- [ ] Étape 4 : Monitoring et alerting
+- [x] Étape 4 : Monitoring et alerting
 - [ ] Étape 5 (bonus) : Conception d'un script assisté par IA
 
 ## Étape 0 : mise en place
@@ -106,3 +106,23 @@ Pour une équipe, c'est intéressant parce que :
 - tout changement passe par Git, donc on sait qui a changé quoi et quand
 - un retour en arrière, c'est un simple `git revert`
 - si quelqu'un modifie le cluster à la main, `selfHeal` le remet dans l'état voulu
+
+## Étape 4 : Monitoring et alerting
+
+J'ai installé `kube-prometheus-stack` avec Helm dans un namespace `monitoring`. Prometheus récupère tout seul les métriques de base des pods (CPU, redémarrages), sans rien ajouter dans mon application. Dans son interface, les cibles `kubelet` et `kube-state-metrics` sont bien en `UP`.
+
+![Cibles Prometheus](images/prometheus-targets.png)
+
+J'ai écrit une règle d'alerte (`monitoring/geoptis-alert.yaml`) qui se déclenche quand un pod `geoptis-app-*` redémarre plus de 2 fois en 5 minutes. Elle porte le label `release: monitoring`, sans lequel Prometheus ne la charge pas.
+
+Pour la déclencher, j'ai d'abord essayé de tuer le process de mon application avec `kill 1`, sans effet : dans un conteneur, ce process est le PID 1 et le noyau ignore les signaux qu'on lui envoie depuis l'intérieur. J'ai donc créé un pod de test qui plante en boucle, avec un nom qui correspond à ma règle. Il est passé en `CrashLoopBackOff` et l'alerte est passée à `Firing`. Mon application n'a pas été touchée.
+
+![Alerte en firing](images/alerte-firing.png)
+
+### Problèmes rencontrés
+
+Au démarrage, l'operator Prometheus a redémarré plusieurs fois pendant que les images se téléchargeaient, puis tout s'est stabilisé tout seul. D'autres alertes sont aussi en rouge (`etcd`, `TargetDown`) : c'est normal sur kind, Prometheus ne peut pas joindre certains composants du cluster.
+
+### Ce que j'en retiens
+
+C'est le même principe que dans mon stage : une métrique, un seuil, une durée. La différence, c'est que tout est décrit en YAML, et qu'il vaut mieux tester une alerte avec un pod dédié plutôt que de casser l'application.
