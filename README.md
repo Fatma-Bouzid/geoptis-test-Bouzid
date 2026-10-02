@@ -16,7 +16,7 @@ J'ai installé kind, créé mon cluster local (`geoptis-test`) et ce dépôt. Le
 
 **Problèmes rencontrés**
 
-J'ai eu deux soucis avec Docker Desktop : un plantage (réglé en le réinstallant), puis une erreur `no such host` quand il téléchargeait l'image de kind. Mon réseau marchait sous Windows, donc j'ai compris que le problème venait du DNS de Docker, et je lui ai donné un DNS public (1.1.1.1 et 8.8.8.8) dans ses réglages.
+J’ai rencontré un problème de DNS lié au réseau Wi-Fi utilisé, ce qui empêchait Docker de récupérer certaines images. Après avoir réglé le problème, le cluster a été créé correctement et le nœud était `Ready`.
 
 **Ce que j'en retiens**
 
