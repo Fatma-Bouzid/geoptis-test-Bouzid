@@ -8,7 +8,7 @@ Candidate : Fatma Bouzid
 - [x] Étape 2 : Empaqueter l'app en chart Helm
 - [x] Étape 3 : Premier déploiement GitOps avec ArgoCD
 - [x] Étape 4 : Monitoring et alerting
-- [ ] Étape 5 (bonus) : Conception d'un script assisté par IA
+- [x] Étape 5 (bonus) : Conception d'un script assisté par IA
 
 ## Étape 0 : mise en place
 
@@ -128,3 +128,51 @@ Au démarrage, l'operator Prometheus a redémarré plusieurs fois pendant que le
 ### Ce que j'en retiens
 
 C'est le même principe que dans mon stage : une métrique, un seuil, une durée. La différence, c'est que tout est décrit en YAML, et qu'il vaut mieux tester une alerte avec un pod dédié plutôt que de casser l'application.
+
+## Étape 5 (bonus) : Conception d'un script assisté par IA
+
+Je voulais relier ce test à mon parcours en IA. J'ai donc conçu un petit script Python (`scripts/cluster_analyzer.py`).
+
+**Ce qu'il fait, en 3 étapes :**
+1. Il demande à Kubernetes l'état des pods et les événements d'erreur (`Warning`), avec des commandes qui ne font que lire.
+2. Il envoie ces informations à une IA (un LLM) qui tourne sur ma machine, avec Ollama.
+3. Il affiche un résumé en français : ce qui va bien, ce qui semble anormal, et pourquoi.
+
+```
+Kubernetes → script Python → question à l'IA → résumé lisible
+```
+
+**Comment j'évite que l'IA invente.** Un LLM peut produire une réponse qui paraît logique alors qu'il n'a pas assez
+d'informations. Pour limiter ce risque :
+- je lui demande de s'appuyer seulement sur les données du cluster, et de citer la preuve de chaque problème ;
+- je lui demande de séparer les faits des hypothèses et d'indiquer lorsqu'une information manque ;
+- le script s'arrête si `kubectl` échoue, pour éviter d'envoyer une erreur au LLM ;
+- je garde seulement les événements `Warning` et je limite la quantité de données envoyées au modèle ;
+- je règle sa « température » à 0, pour des réponses stables.
+
+Ça réduit le risque, mais ne l'élimine pas complètement.
+
+**Et pour corriger les problèmes ?** Pour cette première version, le LLM analyse et explique uniquement. Il ne peut
+pas exécuter de commande ni modifier le cluster.
+
+Si je devais faire évoluer la solution, je séparerais la détection de l'action :
+du code détecterait d'abord l'anomalie, le LLM pourrait ensuite l'expliquer et proposer une solution, puis une personne validerait l'action avant son
+exécution.
+
+Dans l'esprit GitOps du test, une évolution possible serait de proposer un
+changement dans Git et de laisser ArgoCD appliquer le changement après validation.
+
+**À savoir :** Je n'ai pas exécuté ce script contre un LLM, comme l'énoncé le permettait.
+J'aurais aimé le tester réellement, mais je n'ai pas installé Ollama localement
+afin de préserver l'espace de stockage disponible sur ma machine. J'ai vérifié la syntaxe avec `py_compile` et me suis concentrée sur la conception de l'architecture.
+
+## Bilan
+
+**Ce que j'ai terminé** : les étapes 0 à 4, et la conception du bonus (étape 5).
+
+**Ce que j'ai sauté, et pourquoi**
+Rien de ce qui était demandé dans les étapes 0 à 4. Pour le bonus, je n'ai pas exécuté le script : je n'ai pas installé Ollama pour préserver l'espace disque de ma machine, et l'énoncé permettait de ne pas l'exécuter.
+
+**Ce qui était nouveau pour moi** : Kubernetes, Helm et ArgoCD. J’ai surtout découvert une nouvelle façon de gérer les déploiements avec GitOps.
+
+**Ce que je voudrais approfondir** : gagner davantage d’expérience pratique sur Kubernetes, Helm et ArgoCD.
